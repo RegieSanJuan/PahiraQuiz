@@ -10,21 +10,9 @@ export const metadata: Metadata = {
   title: 'Secret Game',
   description: 'Laruin mo to beh',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/buti%20nalang%20na%20solve%20mo%20beh.png',
+    shortcut: '/buti%20nalang%20na%20solve%20mo%20beh.png',
+    apple: '/buti%20nalang%20na%20solve%20mo%20beh.png',
   },
 }
 
