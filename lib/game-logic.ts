@@ -20,7 +20,7 @@ export interface Word {
 export type Direction = 'horizontal' | 'vertical' | 'diagonal';
 
 export const GAME_CONFIG = {
-  gridSize: 10,
+  gridSize: 8,
   romanticMessage: "I LOVE YOU WITH ALL MY HEART",
   words: [
     { text: "LOVE", clue: "Mahal" },

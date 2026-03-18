@@ -8,10 +8,10 @@ import { GameBoard } from '@/components/game-board';
 import { WordList } from '@/components/word-list';
 
 const instructions = [
-  'Mag-click ka lang sa isang letter, then drag mo sa katabing letter para makabuo ng word.',
+  'Mag-tap ka sa first letter, then tap mo yung last letter ng word. Kami na bahala sa nasa gitna.',
   'Puwede siyang pahiga, pababa, or pakanto, so kebs basta magkadikit sila.',
-  'Hanapin mo lahat ng naka-hide na words para ma-reveal yung full love message, syempre.',
-  'Every time may tama kang word, magli-light up siya sa puzzle like the main character that it is.',
+  'Kapag tama yung line mo, automatic na siyang magche-check.',
+  'Hanapin mo lahat ng naka-hide na words para ma-reveal yung full love message, and every tama lights up the board.',
 ];
 
 const moodBadges = ['cutie-only mode', 'funny colors only', 'zero pink energy'];
@@ -194,7 +194,7 @@ export default function Home() {
                     Hanapin mo na
                   </h3>
                   <p className="mt-2 text-center text-sm font-medium text-muted-foreground">
-                    Drag lang nang drag, tapos let the cutie instincts do the rest.
+                    Tap the first letter, then tap the last letter.
                   </p>
 
                   <div className="mt-6">
