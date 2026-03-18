@@ -7,9 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Love Letter Puzzle - Express Your Love',
-  description: 'A romantic word puzzle game that reveals a special love message. Solve the puzzle by connecting letters to find hidden words.',
-  generator: 'v0.app',
+  title: 'Secret Game',
+  description: 'Laruin mo to beh',
   icons: {
     icon: [
       {
