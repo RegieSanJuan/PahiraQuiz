@@ -1,5 +1,6 @@
 'use client'
 
+import { QuizTypeLabel } from '@/components/quiz-type-label'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { QuizType } from '@/lib/types'
@@ -8,13 +9,6 @@ interface ItemDistributionProps {
   selectedTypes: QuizType[]
   distribution: Record<QuizType, number>
   onChange: (distribution: Record<QuizType, number>) => void
-}
-
-const TYPE_LABELS: Record<QuizType, string> = {
-  'sir-dong-style': 'Sir Dong Style',
-  'multiple-choice': 'Multiple Choice',
-  identification: 'Identification',
-  'fill-in-blank': 'Fill in the Blank',
 }
 
 const TYPE_DESCRIPTIONS: Record<QuizType, string> = {
@@ -49,7 +43,7 @@ export function ItemDistribution({
           >
             <div className="min-w-0">
               <Label htmlFor={`dist-${type}`} className="mb-1 block font-semibold">
-                {TYPE_LABELS[type]}
+                <QuizTypeLabel type={type} />
               </Label>
               <p className="text-sm text-muted-foreground">{TYPE_DESCRIPTIONS[type]}</p>
             </div>

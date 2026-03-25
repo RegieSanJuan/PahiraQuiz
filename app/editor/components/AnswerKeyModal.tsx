@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { QuizTypeLabel } from '@/components/quiz-type-label'
 import { Scroll } from 'lucide-react'
 import {
   AnyQuizItem,
@@ -31,13 +32,6 @@ export function AnswerKeyModal({ items }: AnswerKeyModalProps) {
     itemsByType.get(item.type)!.push(item)
   })
 
-  const typeLabels: Record<string, string> = {
-    'sir-dong-style': 'Sir Dong Style',
-    'multiple-choice': 'Multiple Choice',
-    identification: 'Identification',
-    'fill-in-blank': 'Fill in the Blank',
-  }
-
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -55,7 +49,9 @@ export function AnswerKeyModal({ items }: AnswerKeyModalProps) {
         <div className="space-y-6">
           {Array.from(itemsByType.entries()).map(([type, typeItems]) => (
             <div key={type} className="space-y-3">
-              <h3 className="text-xl font-semibold">{typeLabels[type]}</h3>
+              <h3 className="text-xl font-semibold">
+                <QuizTypeLabel type={type as AnyQuizItem['type']} />
+              </h3>
 
               <div className="space-y-3">
                 {typeItems.map((item) => (

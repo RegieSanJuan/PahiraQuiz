@@ -9,7 +9,7 @@ export interface QuizItem {
   number: number
 }
 
-// Sir Dong Style: Two statements with relationship choices
+// Multiple Statement Quiz (Sir dong inspired): Two statements with relationship choices
 export interface SirDongStyleItem extends QuizItem {
   type: 'sir-dong-style'
   statement1: string

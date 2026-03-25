@@ -21,7 +21,7 @@ The product line used in the UI is:
 
 - One-page quiz generator flow for faster classroom prep
 - Supports 4 quiz types:
-  - Sir Dong Style
+  - Multiple Statement Quiz ( Sir dong inspired )
   - Multiple Choice
   - Identification
   - Fill in the Blank
@@ -93,7 +93,7 @@ This means:
 
 ## Quiz Types
 
-### 1. Sir Dong Style
+### 1. Multiple Statement Quiz ( Sir dong inspired )
 
 Two statements plus four choices about the relationship between them.
 

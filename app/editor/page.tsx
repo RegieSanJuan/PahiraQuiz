@@ -9,19 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { QuestionEditor } from './components/QuestionEditor'
 import { AnswerKeyModal } from './components/AnswerKeyModal'
 import { ExportButton } from './components/ExportButton'
+import { QuizTypeLabel, getQuizTypeLabel } from '@/components/quiz-type-label'
 import { SiteBrand } from '@/components/site-brand'
 import { AnyQuizItem, Quiz, QuizType } from '@/lib/types'
 import { loadDraft, loadDraftById, saveDraft } from '@/lib/localStorage'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-
-const TYPE_LABELS: Record<QuizType, string> = {
-  'sir-dong-style': 'Sir Dong Style',
-  'multiple-choice': 'Multiple Choice',
-  identification: 'Identification',
-  'fill-in-blank': 'Fill in the Blank',
-}
 
 function renderPreview(item: AnyQuizItem) {
   if (item.type === 'sir-dong-style') {
@@ -254,7 +248,9 @@ function EditorPageContent() {
                     <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                       Formats used
                     </p>
-                    <p className="mt-2 font-medium">{quiz.types.map((type) => TYPE_LABELS[type]).join(', ')}</p>
+                    <p className="mt-2 font-medium">
+                      {quiz.types.map((type) => getQuizTypeLabel(type)).join(', ')}
+                    </p>
                   </div>
 
                   <div className="rounded-xl border border-border bg-secondary/50 p-4">
@@ -315,7 +311,7 @@ function EditorPageContent() {
                 {quiz.items.map((item) => (
                   <div key={item.id} className="rounded-xl border border-border bg-background p-5">
                     <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      {TYPE_LABELS[item.type]}
+                      <QuizTypeLabel type={item.type} />
                     </p>
                     <h3 className="mt-2 text-lg font-semibold">Question {item.number}</h3>
                     <div className="mt-4">{renderPreview(item)}</div>

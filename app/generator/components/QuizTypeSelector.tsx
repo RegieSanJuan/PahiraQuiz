@@ -1,6 +1,7 @@
 'use client'
 
 import { Checkbox } from '@/components/ui/checkbox'
+import { QuizTypeLabel } from '@/components/quiz-type-label'
 import { QuizType } from '@/lib/types'
 import { BookOpen, List, PenTool, HelpCircle } from 'lucide-react'
 
@@ -11,13 +12,13 @@ interface QuizTypeSelectorProps {
 
 const QUIZ_TYPES: Array<{
   id: QuizType
-  name: string
+  name: React.ReactNode
   description: string
   icon: React.ReactNode
 }> = [
   {
     id: 'sir-dong-style',
-    name: 'Sir Dong Style',
+    name: <QuizTypeLabel type="sir-dong-style" />,
     description: 'Two statements with four choices about how the statements relate to each other.',
     icon: <HelpCircle className="h-5 w-5" />,
   },

@@ -208,7 +208,7 @@ export async function generatePDF(
 
 function formatQuizTypeName(type: string): string {
   const typeNames: Record<string, string> = {
-    'sir-dong-style': 'Sir Dong Style',
+    'sir-dong-style': 'Multiple Statement Quiz ( Sir dong inspired )',
     'multiple-choice': 'Multiple Choice',
     identification: 'Identification',
     'fill-in-blank': 'Fill in the Blank',

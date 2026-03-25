@@ -26,7 +26,9 @@ import {
   MultipleChoiceItem,
   IdentificationItem,
   FillInBlankItem,
+  QuizType,
 } from '@/lib/types'
+import { QuizTypeLabel } from '@/components/quiz-type-label'
 import { Trash2, Copy } from 'lucide-react'
 
 interface QuestionEditorProps {
@@ -73,20 +75,13 @@ export function QuestionEditor({
     groupedByType.get(item.type)!.push(item)
   })
 
-  const typeLabels: Record<string, string> = {
-    'sir-dong-style': 'Sir Dong Style',
-    'multiple-choice': 'Multiple Choice',
-    identification: 'Identification',
-    'fill-in-blank': 'Fill in the Blank',
-  }
-
   return (
     <div className="space-y-4">
       <Accordion type="multiple" className="w-full" defaultValue={items.slice(0, 3).map((i) => i.id)}>
         {Array.from(groupedByType.entries()).map(([type, typeItems]) => (
           <div key={type} className="space-y-2">
             <h3 className="font-semibold text-lg text-primary mt-6 mb-3 px-2">
-              {typeLabels[type]} ({typeItems.length})
+              <QuizTypeLabel type={type as QuizType} /> ({typeItems.length})
             </h3>
 
             {typeItems.map((item) => (

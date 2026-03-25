@@ -114,7 +114,7 @@ export function buildQuizPrompt(
 ): string {
   const typeInstructions: Record<QuizType, string> = {
     'sir-dong-style':
-      'Create two statements and four plain-text choices. The correct answer must be one of A, B, C, or D.',
+      'Create a Multiple Statement Quiz ( Sir dong inspired ) item with two statements and four plain-text choices. The correct answer must be one of A, B, C, or D.',
     'multiple-choice':
       'Create one question and four plain-text choices. The correct answer must be one of A, B, C, or D.',
     identification:
@@ -136,10 +136,11 @@ OUTPUT RULES:
 1. Return JSON only.
 2. Put the quiz items in an "items" array.
 3. For multiple-choice and sir-dong-style items, "choices" must contain exactly 4 answer texts without A/B/C/D prefixes.
-4. "correctAnswer" for multiple-choice and sir-dong-style items must be a single letter: A, B, C, or D.
-5. Keep the language clear, direct, and suitable for students.
-6. Use only details supported by the lesson content.
-7. Avoid repeating the same correct letter too often.
+4. The "sir-dong-style" type is the Multiple Statement Quiz ( Sir dong inspired ) format.
+5. "correctAnswer" for multiple-choice and sir-dong-style items must be a single letter: A, B, C, or D.
+6. Keep the language clear, direct, and suitable for students.
+7. Use only details supported by the lesson content.
+8. Avoid repeating the same correct letter too often.
 
 JSON FORMAT:
 {

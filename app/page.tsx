@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { QuizTypeLabel } from '@/components/quiz-type-label'
 import { SiteBrand } from '@/components/site-brand'
 import Link from 'next/link'
 import {
@@ -118,24 +119,26 @@ export default function HomePage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {[
                 {
-                  title: 'Sir Dong Style',
+                  type: 'sir-dong-style' as const,
                   description: 'Two statements plus four choices about their relationship.',
                 },
                 {
-                  title: 'Multiple Choice',
+                  type: 'multiple-choice' as const,
                   description: 'Standard four-choice questions for quick checking.',
                 },
                 {
-                  title: 'Identification',
+                  type: 'identification' as const,
                   description: 'Short-answer questions for terms, names, and concepts.',
                 },
                 {
-                  title: 'Fill in the Blank',
+                  type: 'fill-in-blank' as const,
                   description: 'Sentence-based items with one missing word or phrase.',
                 },
               ].map((format) => (
-                <div key={format.title} className="rounded-xl border border-border bg-secondary/50 p-4">
-                  <h3 className="text-xl">{format.title}</h3>
+                <div key={format.type} className="rounded-xl border border-border bg-secondary/50 p-4">
+                  <h3 className="text-xl">
+                    <QuizTypeLabel type={format.type} />
+                  </h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {format.description}
                   </p>
