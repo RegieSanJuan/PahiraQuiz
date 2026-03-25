@@ -7,12 +7,25 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Secret Game',
-  description: 'Laruin mo to beh',
+  title: 'PahiraQuiz - AI-Powered Quiz Generator',
+  description: 'Create customizable quizzes from your lesson materials in minutes using AI',
+  generator: 'v0.app',
   icons: {
-    icon: '/buti%20nalang%20na%20solve%20mo%20beh.png',
-    shortcut: '/buti%20nalang%20na%20solve%20mo%20beh.png',
-    apple: '/buti%20nalang%20na%20solve%20mo%20beh.png',
+    icon: [
+      {
+        url: '/icon-light-32x32.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon-dark-32x32.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+    apple: '/apple-icon.png',
   },
 }
 
