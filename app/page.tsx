@@ -3,290 +3,219 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowRight, Sparkles, BookOpen, Download, Zap, Clock } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpenText,
+  Clock3,
+  FileText,
+  KeyRound,
+  NotebookPen,
+  Trash2,
+} from 'lucide-react'
 import { getDraftsList, deleteDraft } from '@/lib/localStorage'
-import { Trash2 } from 'lucide-react'
 
 export default function HomePage() {
   const [drafts, setDrafts] = useState<Array<{ id: string; title: string; savedAt: string }>>([])
 
   useEffect(() => {
     const savedDrafts = getDraftsList()
-    setDrafts(savedDrafts.sort((a, b) => 
-      new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
-    ))
+    setDrafts(savedDrafts)
   }, [])
 
   const handleDeleteDraft = (id: string) => {
     deleteDraft(id)
-    setDrafts(drafts.filter(d => d.id !== id))
+    setDrafts((currentDrafts) => currentDrafts.filter((draft) => draft.id !== id))
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
+    <div className="min-h-screen text-foreground">
+      <header className="border-b border-border/80 bg-background/95 backdrop-blur">
+        <div className="site-shell flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-2xl font-semibold tracking-tight">PahiraQuiz</p>
+            <p className="text-sm text-muted-foreground">
+              Gusto mo ba pahirapan (matuto) students mo?
+            </p>
           </div>
-          <span className="font-bold text-lg">PahiraQuiz</span>
-        </div>
-        <Link href="/generator">
-          <Button className="gap-2">
-            Get Started
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center px-6 py-24 text-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
-          <Sparkles className="w-4 h-4 text-accent" />
-          <span className="text-sm font-medium text-accent">AI-Powered Quiz Generation</span>
-        </div>
-
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-balance">
-          Create Stunning Quizzes in Seconds
-        </h1>
-
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl text-balance">
-          Transform your lesson materials into comprehensive quizzes with AI. Support for 4 quiz types, instant answer keys, and PDF exports.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 mb-12">
           <Link href="/generator">
-            <Button size="lg" className="gap-2 px-8">
-              Create Your First Quiz
-              <ArrowRight className="w-5 h-5" />
+            <Button className="gap-2">
+              Open generator
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <Button size="lg" variant="outline" className="gap-2 px-8">
-            View Documentation
-          </Button>
         </div>
+      </header>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-8 w-full py-12 border-y border-border">
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-primary mb-2">4</div>
-            <div className="text-sm text-muted-foreground">Quiz Types</div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-primary mb-2">{"<1min"}</div>
-            <div className="text-sm text-muted-foreground">Generation Time</div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold text-primary mb-2">100%</div>
-            <div className="text-sm text-muted-foreground">Customizable</div>
-          </div>
-        </div>
-      </section>
+      <main className="site-shell py-10 sm:py-14">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.8fr)]">
+          <div className="paper-panel p-6 sm:p-8">
+            <p className="section-label">Classroom quiz builder</p>
+            <h1 className="page-title mt-3 max-w-3xl">
+              Build a working quiz draft from your lesson, then clean it up before you print.
+            </h1>
+            <p className="muted-copy mt-5 max-w-2xl">
+              PahiraQuiz keeps the workflow simple: validate your Gemini 2.5 key, upload a PDF or
+              paste your lesson, choose the question formats you need, and edit everything before
+              export.
+            </p>
 
-      {/* Recent Drafts Section */}
-      {drafts.length > 0 && (
-        <section className="px-6 py-16 bg-card border-t border-border">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Clock className="w-6 h-6 text-primary" />
-              Recent Drafts
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {drafts.slice(0, 4).map((draft) => (
-                <div
-                  key={draft.id}
-                  className="p-4 rounded-lg border border-border bg-background hover:border-primary/30 transition-colors flex items-center justify-between group"
-                >
-                  <Link href={`/editor?id=${draft.id}`} className="flex-1">
-                    <p className="font-semibold hover:text-primary transition-colors">
-                      {draft.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(draft.savedAt).toLocaleDateString()} at{' '}
-                      {new Date(draft.savedAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </Link>
-                  <button
-                    onClick={() => handleDeleteDraft(draft.id)}
-                    className="ml-4 p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 rounded"
-                    title="Delete draft"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </button>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/generator">
+                <Button size="lg" className="gap-2">
+                  Start a quiz
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+
+              {drafts[0] ? (
+                <Link href={`/editor?id=${drafts[0].id}`}>
+                  <Button size="lg" variant="outline">
+                    Continue latest draft
+                  </Button>
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          <aside className="paper-panel p-6">
+            <p className="section-label">Before you start</p>
+            <h2 className="mt-3 text-3xl">What you need</h2>
+            <div className="mt-5 space-y-4 text-sm">
+              <div className="flex items-start gap-3">
+                <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
+                <p>A valid Google AI Studio key for the Gemini 2.5 Flash model.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-4 w-4 text-primary" />
+                <p>Lesson content in PDF, TXT, or pasted text form.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <NotebookPen className="mt-0.5 h-4 w-4 text-primary" />
+                <p>Five minutes to review the generated questions before export.</p>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="paper-panel p-6">
+            <p className="section-label">How it works</p>
+            <div className="mt-5 space-y-5">
+              {[
+                'Add your Gemini key and validate it once.',
+                'Paste notes or upload a lesson file.',
+                'Choose quiz types, set counts, then edit before saving or exporting.',
+              ].map((step, index) => (
+                <div key={step} className="flex items-start gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm leading-7 text-foreground/90">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="paper-panel p-6">
+            <p className="section-label">Question formats</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  title: 'Sir Dong Style',
+                  description: 'Two statements plus four choices about their relationship.',
+                },
+                {
+                  title: 'Multiple Choice',
+                  description: 'Standard four-choice questions for quick checking.',
+                },
+                {
+                  title: 'Identification',
+                  description: 'Short-answer questions for terms, names, and concepts.',
+                },
+                {
+                  title: 'Fill in the Blank',
+                  description: 'Sentence-based items with one missing word or phrase.',
+                },
+              ].map((format) => (
+                <div key={format.title} className="rounded-xl border border-border bg-secondary/50 p-4">
+                  <h3 className="text-xl">{format.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {format.description}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
-      )}
 
-      {/* Features Section */}
-      <section className="px-6 py-24 max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
-          <p className="text-lg text-muted-foreground">Everything you need to create professional quizzes</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Feature 1 */}
-          <div className="p-6 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-6 h-6 text-primary" />
-              </div>
+        {drafts.length > 0 && (
+          <section className="paper-panel mt-8 p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-2">AI-Powered Generation</h3>
-                <p className="text-muted-foreground">
-                  Upload your lesson materials and let AI generate comprehensive quizzes in seconds.
-                </p>
+                <p className="section-label">Saved work</p>
+                <h2 className="mt-2 text-3xl">Recent drafts</h2>
               </div>
+              <p className="text-sm text-muted-foreground">
+                Drafts stay on this browser until you delete them.
+              </p>
             </div>
-          </div>
 
-          {/* Feature 2 */}
-          <div className="p-6 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">4 Quiz Types</h3>
-                <p className="text-muted-foreground">
-                  Sir Dong Style, Multiple Choice, Identification, and Fill in the Blank formats.
-                </p>
-              </div>
-            </div>
-          </div>
+            <div className="mt-6 space-y-3">
+              {drafts.slice(0, 6).map((draft) => (
+                <div
+                  key={draft.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border bg-background/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <Link href={`/editor?id=${draft.id}`} className="font-semibold hover:text-primary">
+                      {draft.title}
+                    </Link>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Last saved{' '}
+                      {new Date(draft.savedAt).toLocaleString([], {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
 
-          {/* Feature 3 */}
-          <div className="p-6 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Full Editing Capabilities</h3>
-                <p className="text-muted-foreground">
-                  Edit questions, answers, and regenerate individual items exactly how you want them.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature 4 */}
-          <div className="p-6 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Download className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Instant PDF Export</h3>
-                <p className="text-muted-foreground">
-                  Download professionally formatted quizzes with optional answer keys for printing.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quiz Types Section */}
-      <section className="px-6 py-24 bg-card border-t border-border">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Quiz Type Examples</h2>
-            <p className="text-lg text-muted-foreground">Support for different assessment formats</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Sir Dong Style */}
-            <div className="p-6 border border-border rounded-lg bg-background">
-              <h3 className="font-bold text-lg mb-4 text-primary">Sir Dong Style</h3>
-              <div className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  <strong>Statement 1:</strong> The Earth revolves around the Sun
-                </p>
-                <p className="text-muted-foreground">
-                  <strong>Statement 2:</strong> The Sun is a fixed point in space
-                </p>
-                <div className="mt-4 space-y-2">
-                  <p className="text-muted-foreground">A. Both statements are true</p>
-                  <p className="text-muted-foreground">B. Statement 1 is true, Statement 2 is false</p>
-                  <p className="text-muted-foreground">C. Both statements are false</p>
-                  <p className="text-muted-foreground">D. Statement 1 is false, Statement 2 is true</p>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/editor?id=${draft.id}`}>
+                      <Button variant="outline" size="sm">
+                        Open
+                      </Button>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteDraft(draft.id)}
+                      aria-label={`Delete ${draft.title}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
+          </section>
+        )}
+      </main>
 
-            {/* Multiple Choice */}
-            <div className="p-6 border border-border rounded-lg bg-background">
-              <h3 className="font-bold text-lg mb-4 text-primary">Multiple Choice</h3>
-              <div className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  <strong>Question:</strong> What is the capital of France?
-                </p>
-                <div className="mt-4 space-y-2">
-                  <p className="text-muted-foreground">A. London</p>
-                  <p className="text-muted-foreground">B. Paris</p>
-                  <p className="text-muted-foreground">C. Berlin</p>
-                  <p className="text-muted-foreground">D. Madrid</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Identification */}
-            <div className="p-6 border border-border rounded-lg bg-background">
-              <h3 className="font-bold text-lg mb-4 text-primary">Identification</h3>
-              <div className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  <strong>Question:</strong> Who was the first President of the United States?
-                </p>
-                <p className="text-muted-foreground italic">Answer: George Washington</p>
-              </div>
-            </div>
-
-            {/* Fill in the Blank */}
-            <div className="p-6 border border-border rounded-lg bg-background">
-              <h3 className="font-bold text-lg mb-4 text-primary">Fill in the Blank</h3>
-              <div className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  <strong>Sentence:</strong> The _____ is the largest planet in our solar system.
-                </p>
-                <p className="text-muted-foreground italic">Answer: Jupiter</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="px-6 py-24 max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Your Quiz?</h2>
-        <p className="text-lg text-muted-foreground mb-8">
-          Get started in minutes. No account required. All you need is your Gemini API key.
-        </p>
-        <Link href="/generator">
-          <Button size="lg" className="gap-2 px-8">
-            Create Your First Quiz
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        </Link>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border px-6 py-8">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <footer className="border-t border-border/80 py-6">
+        <div className="site-shell flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            <span className="font-semibold">PahiraQuiz</span>
+            <Clock3 className="h-4 w-4" />
+            <span>Built for quicker classroom prep.</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Created with AI. No data stored. All processing is client-side.
-          </p>
+          <div className="flex items-center gap-2">
+            <BookOpenText className="h-4 w-4" />
+            <span>All drafts stay on your device.</span>
+          </div>
         </div>
       </footer>
     </div>

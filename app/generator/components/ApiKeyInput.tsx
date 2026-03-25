@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Check, X } from 'lucide-react'
-import { validateApiKey } from '@/lib/gemini'
+import { Eye, EyeOff, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react'
+import { GEMINI_MODEL, validateApiKey } from '@/lib/gemini'
+import { clearApiKey, loadApiKey, saveApiKey } from '@/lib/localStorage'
 import { toast } from 'sonner'
 
 interface ApiKeyInputProps {
@@ -14,60 +15,110 @@ interface ApiKeyInputProps {
   onValidationChange: (isValid: boolean) => void
 }
 
+type ValidationStatus = 'idle' | 'saved' | 'validating' | 'valid' | 'invalid'
+
 export function ApiKeyInput({
   value,
   onChange,
   onValidationChange,
 }: ApiKeyInputProps) {
   const [showKey, setShowKey] = useState(false)
-  const [isValidating, setIsValidating] = useState(false)
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'valid' | 'invalid'>('idle')
+  const [validationStatus, setValidationStatus] = useState<ValidationStatus>('idle')
+  const [statusMessage, setStatusMessage] = useState(
+    'Your key is stored only in this browser. Validate it before generating.'
+  )
+  const [hasStoredKey, setHasStoredKey] = useState(false)
 
-  // Debounced validation
   useEffect(() => {
-    if (!value) {
-      setValidationStatus('idle')
-      onValidationChange(false)
+    const storedKey = loadApiKey()
+    if (!value && storedKey) {
+      onChange(storedKey)
+      setHasStoredKey(true)
+      setValidationStatus('saved')
+      setStatusMessage('Saved key loaded from this browser. Validate it to continue.')
+    }
+  }, [onChange, value])
+
+  const handleValidate = async () => {
+    const trimmedKey = value.trim()
+    if (!trimmedKey) {
+      toast.error('Paste your Gemini API key first.')
       return
     }
 
-    const timer = setTimeout(async () => {
-      setIsValidating(true)
-      try {
-        const isValid = await validateApiKey(value)
-        setValidationStatus(isValid ? 'valid' : 'invalid')
-        onValidationChange(isValid)
-        if (!isValid) {
-          toast.error('Invalid API key. Please check and try again.')
-        }
-      } catch (error) {
-        console.error('Validation error:', error)
-        setValidationStatus('invalid')
-        onValidationChange(false)
-      } finally {
-        setIsValidating(false)
-      }
-    }, 1000)
+    setValidationStatus('validating')
+    setStatusMessage(`Checking your key against ${GEMINI_MODEL}...`)
+    onValidationChange(false)
 
-    return () => clearTimeout(timer)
-  }, [value, onValidationChange])
+    try {
+      const result = await validateApiKey(trimmedKey)
+      if (!result.valid) {
+        throw new Error('The Gemini API key could not be validated.')
+      }
+
+      onChange(trimmedKey)
+      onValidationChange(true)
+      setValidationStatus('valid')
+      setStatusMessage(`Key accepted for ${result.model}. It is saved only on this browser.`)
+      setHasStoredKey(true)
+      saveApiKey(trimmedKey)
+      toast.success('API key validated.')
+    } catch (error) {
+      console.error('Validation error:', error)
+      setValidationStatus('invalid')
+      setStatusMessage(error instanceof Error ? error.message : 'Unable to validate the API key.')
+      toast.error(error instanceof Error ? error.message : 'Unable to validate the API key.')
+    }
+  }
+
+  const handleClearStoredKey = () => {
+    clearApiKey()
+    onChange('')
+    onValidationChange(false)
+    setValidationStatus('idle')
+    setStatusMessage('Saved key removed from this browser.')
+    setHasStoredKey(false)
+    toast.success('Saved API key removed.')
+  }
+
+  const handleValueChange = (nextValue: string) => {
+    onChange(nextValue)
+    onValidationChange(false)
+    setValidationStatus(nextValue ? 'idle' : hasStoredKey ? 'saved' : 'idle')
+    setStatusMessage(
+      nextValue
+        ? 'Click validate to confirm the key before generating.'
+        : 'Paste your Gemini API key here.'
+    )
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
+        <div className="flex items-start gap-3">
+          <KeyRound className="mt-0.5 h-4 w-4 text-primary" />
+          <p>
+            Use a Google AI Studio API key with <span className="font-medium text-foreground">{GEMINI_MODEL}</span>.
+            The key is kept only in this browser unless you remove it.
+          </p>
+        </div>
+      </div>
+
       <div>
-        <Label htmlFor="api-key" className="text-base font-semibold mb-2 block">
-          Gemini API Key
+        <Label htmlFor="api-key" className="mb-2 block text-sm font-semibold">
+          Gemini API key
         </Label>
-        <p className="text-sm text-muted-foreground mb-3">
-          Enter your Google Gemini API key. Get one free at{' '}
+        <p className="mb-3 text-sm text-muted-foreground">
+          Get a key from{' '}
           <a
-            href="https://makersuite.google.com/app/apikey"
+            href="https://aistudio.google.com/app/apikey"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
             Google AI Studio
           </a>
+          .
         </p>
       </div>
 
@@ -76,34 +127,60 @@ export function ApiKeyInput({
           id="api-key"
           type={showKey ? 'text' : 'password'}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleValueChange(e.target.value)}
           placeholder="AIza... (your API key)"
-          className="pr-24"
+          className="pr-12"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
           <button
             onClick={() => setShowKey(!showKey)}
-            className="p-1 hover:bg-secondary rounded"
+            className="rounded p-1 hover:bg-secondary"
             type="button"
             aria-label={showKey ? 'Hide key' : 'Show key'}
           >
-            {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
-          {isValidating && (
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          )}
-          {!isValidating && validationStatus === 'valid' && (
-            <Check className="w-4 h-4 text-green-500" />
-          )}
-          {!isValidating && validationStatus === 'invalid' && (
-            <X className="w-4 h-4 text-red-500" />
-          )}
         </div>
       </div>
 
-      {validationStatus === 'valid' && (
-        <p className="text-sm text-green-600">API key is valid and ready to use.</p>
-      )}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="button"
+          onClick={handleValidate}
+          disabled={validationStatus === 'validating'}
+          className="gap-2"
+        >
+          {validationStatus === 'validating' ? 'Validating...' : 'Validate key'}
+        </Button>
+
+        {hasStoredKey ? (
+          <Button type="button" variant="outline" onClick={handleClearStoredKey}>
+            Remove saved key
+          </Button>
+        ) : null}
+      </div>
+
+      <div
+        className={`rounded-xl border px-4 py-3 text-sm ${
+          validationStatus === 'valid'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : validationStatus === 'invalid'
+            ? 'border-red-200 bg-red-50 text-red-700'
+            : 'border-border bg-background text-muted-foreground'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {validationStatus === 'valid' ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4" />
+          ) : validationStatus === 'invalid' ? (
+            <AlertCircle className="mt-0.5 h-4 w-4" />
+          ) : (
+            <KeyRound className="mt-0.5 h-4 w-4" />
+          )}
+          <p>{statusMessage}</p>
+        </div>
+      </div>
     </div>
   )
 }

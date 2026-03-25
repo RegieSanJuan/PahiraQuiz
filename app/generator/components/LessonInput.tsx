@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -30,13 +29,15 @@ export function LessonInput({
     const file = e.currentTarget.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (file.type !== 'text/plain' && file.type !== 'application/pdf') {
+    const lowerFileName = file.name.toLowerCase()
+    const isTextFile = file.type === 'text/plain' || lowerFileName.endsWith('.txt')
+    const isPdfFile = file.type === 'application/pdf' || lowerFileName.endsWith('.pdf')
+
+    if (!isTextFile && !isPdfFile) {
       toast.error('Please upload a PDF or TXT file')
       return
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('File size must be less than 10MB')
       return
@@ -50,11 +51,7 @@ export function LessonInput({
       toast.success(`Extracted text from ${file.name}`)
     } catch (error) {
       console.error('File extraction error:', error)
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to extract text from file'
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to extract text from file')
     } finally {
       setIsLoading(false)
     }
@@ -66,24 +63,20 @@ export function LessonInput({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Label className="text-base font-semibold mb-2 block">
-          Lesson Content
-        </Label>
-        <p className="text-sm text-muted-foreground">
-          Upload your lesson materials or paste the content directly
-        </p>
+    <div className="space-y-5">
+      <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
+        Upload a PDF or TXT file, or paste the lesson directly. Longer, cleaner content usually
+        gives better quiz items.
       </div>
 
       <Tabs value={inputMethod} onValueChange={(v) => setInputMethod(v as 'file' | 'text')}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="file">Upload File</TabsTrigger>
-          <TabsTrigger value="text">Paste Text</TabsTrigger>
+          <TabsTrigger value="file">Upload file</TabsTrigger>
+          <TabsTrigger value="text">Paste text</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="file" className="space-y-4">
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+        <TabsContent value="file" className="space-y-4 pt-3">
+          <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
             <input
               type="file"
               accept=".pdf,.txt"
@@ -92,72 +85,64 @@ export function LessonInput({
               className="hidden"
               id="file-upload"
             />
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer flex flex-col items-center gap-3"
-            >
-              <Upload className="w-8 h-8 text-primary opacity-50" />
-              <div>
+            <label htmlFor="file-upload" className="flex cursor-pointer flex-col items-center gap-3">
+              <Upload className="h-7 w-7 text-primary" />
+              <div className="space-y-1">
                 <p className="font-semibold">
-                  {isLoading ? 'Processing...' : 'Click to upload or drag and drop'}
+                  {isLoading ? 'Reading your file...' : 'Choose a PDF or TXT file'}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  PDF or TXT files (max 10MB)
-                </p>
+                <p className="text-sm text-muted-foreground">Maximum file size: 10MB</p>
               </div>
             </label>
           </div>
 
-          {fileName && (
-            <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium text-sm">{fileName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {Math.ceil(value.length / 100)} characters extracted
+          {fileName ? (
+            <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/50 p-4">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{fileName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {value.length.toLocaleString()} characters extracted
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFile}
-              >
-                <X className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={clearFile} aria-label="Clear uploaded file">
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          )}
+          ) : null}
 
-          {value && (
+          {value ? (
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Preview</Label>
-              <div className="bg-secondary rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-muted-foreground">
-                {value.substring(0, 500)}
-                {value.length > 500 && '...'}
+              <div className="max-h-56 overflow-y-auto rounded-xl border border-border bg-background p-4 text-sm leading-6 text-muted-foreground">
+                {value.substring(0, 700)}
+                {value.length > 700 ? '...' : ''}
               </div>
             </div>
-          )}
+          ) : null}
         </TabsContent>
 
-        <TabsContent value="text" className="space-y-4">
+        <TabsContent value="text" className="space-y-4 pt-3">
           <Textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Paste your lesson content here..."
-            className="min-h-64 resize-none"
+            placeholder="Paste the lesson text here..."
+            className="min-h-72 resize-y"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{value.length} characters</span>
-            <span>{value.split(/\s+/).filter(Boolean).length} words</span>
+
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span className="data-pill">{value.length.toLocaleString()} characters</span>
+            <span className="data-pill">
+              {value.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+            </span>
           </div>
         </TabsContent>
       </Tabs>
 
-      {!value && (
-        <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-          <p className="text-sm text-accent">
-            Tip: Provide comprehensive lesson content for better quiz generation. At least 200 characters recommended.
-          </p>
+      {!value ? (
+        <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
+          Tip: aim for at least one complete lesson section, not just a short outline.
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

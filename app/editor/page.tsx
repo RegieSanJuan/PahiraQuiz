@@ -1,22 +1,94 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { QuestionEditor } from './components/QuestionEditor'
 import { AnswerKeyModal } from './components/AnswerKeyModal'
 import { ExportButton } from './components/ExportButton'
-import { Quiz, AnyQuizItem } from '@/lib/types'
-import { loadDraft, saveDraft } from '@/lib/localStorage'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { AnyQuizItem, Quiz, QuizType } from '@/lib/types'
+import { loadDraft, loadDraftById, saveDraft } from '@/lib/localStorage'
+import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
+const TYPE_LABELS: Record<QuizType, string> = {
+  'sir-dong-style': 'Sir Dong Style',
+  'multiple-choice': 'Multiple Choice',
+  identification: 'Identification',
+  'fill-in-blank': 'Fill in the Blank',
+}
+
+function renderPreview(item: AnyQuizItem) {
+  if (item.type === 'sir-dong-style') {
+    return (
+      <div className="space-y-3 text-sm">
+        <p>
+          <strong>Statement 1:</strong> {item.statement1}
+        </p>
+        <p>
+          <strong>Statement 2:</strong> {item.statement2}
+        </p>
+        <div className="space-y-2">
+          {item.choices.map((choice, index) => (
+            <p key={index}>
+              {String.fromCharCode(65 + index)}. {choice}
+            </p>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'multiple-choice') {
+    return (
+      <div className="space-y-3 text-sm">
+        <p>
+          <strong>Question:</strong> {item.question}
+        </p>
+        <div className="space-y-2">
+          {item.choices.map((choice, index) => (
+            <p key={index}>
+              {String.fromCharCode(65 + index)}. {choice}
+            </p>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'identification') {
+    return <p className="text-sm">{item.question}</p>
+  }
+
+  return <p className="text-sm">{item.sentence}</p>
+}
+
 export default function EditorPage() {
+  return (
+    <Suspense fallback={<EditorLoadingState />}>
+      <EditorPageContent />
+    </Suspense>
+  )
+}
+
+function EditorLoadingState() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="site-shell flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading quiz draft...</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EditorPageContent() {
   const searchParams = useSearchParams()
   const quizId = searchParams.get('id')
 
@@ -25,28 +97,26 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [quizTitle, setQuizTitle] = useState('')
 
-  // Load quiz from draft
   useEffect(() => {
     setIsLoading(true)
-    const draft = loadDraft()
-    
-    if (draft && (!quizId || draft.id === quizId)) {
+
+    const draft = quizId ? loadDraftById(quizId) : loadDraft()
+
+    if (draft) {
       setQuiz(draft)
       setQuizTitle(draft.title)
-    } else if (!draft) {
+    } else {
       toast.error('Quiz not found. Please generate a new quiz.')
     }
-    
+
     setIsLoading(false)
   }, [quizId])
 
-  // Auto-save every 30 seconds
   useEffect(() => {
     if (!quiz) return
 
     const timer = setInterval(() => {
-      const quizToSave = { ...quiz, title: quizTitle }
-      saveDraft(quizToSave)
+      saveDraft({ ...quiz, title: quizTitle })
     }, 30000)
 
     return () => clearInterval(timer)
@@ -54,243 +124,212 @@ export default function EditorPage() {
 
   const handleItemsChange = (items: AnyQuizItem[]) => {
     if (!quiz) return
-    const updated = { ...quiz, items, updatedAt: new Date() }
-    setQuiz(updated)
+
+    setQuiz({
+      ...quiz,
+      items,
+      updatedAt: new Date(),
+    })
   }
 
   const handleItemDelete = (id: string) => {
     if (!quiz) return
-    const updated = {
+
+    const updatedItems = quiz.items
+      .filter((item) => item.id !== id)
+      .map((item, index) => ({
+        ...item,
+        number: index + 1,
+      }))
+
+    setQuiz({
       ...quiz,
-      items: quiz.items.filter((item) => item.id !== id),
+      items: updatedItems,
       updatedAt: new Date(),
-    }
-    // Renumber items
-    updated.items.forEach((item, idx) => {
-      item.number = idx + 1
     })
-    setQuiz(updated)
     toast.success('Question deleted')
   }
 
   const handleTitleChange = (newTitle: string) => {
     setQuizTitle(newTitle)
-    if (quiz) {
-      setQuiz({ ...quiz, title: newTitle, updatedAt: new Date() })
-    }
+
+    if (!quiz) return
+
+    setQuiz({
+      ...quiz,
+      title: newTitle,
+      updatedAt: new Date(),
+    })
   }
 
   const handleSave = async () => {
     if (!quiz) return
+
     setIsSaving(true)
+
     try {
-      const quizToSave = { ...quiz, title: quizTitle }
+      const quizToSave = {
+        ...quiz,
+        title: quizTitle,
+        updatedAt: new Date(),
+      }
+
       saveDraft(quizToSave)
       setQuiz(quizToSave)
-      toast.success('Quiz saved successfully')
+      toast.success('Quiz saved successfully.')
     } catch (error) {
       console.error('Save error:', error)
-      toast.error('Failed to save quiz')
+      toast.error('Failed to save quiz.')
     } finally {
       setIsSaving(false)
     }
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading quiz...</p>
-        </div>
-      </div>
-    )
+    return <EditorLoadingState />
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Quiz Not Found</CardTitle>
-            <CardDescription>
-              The quiz you&apos;re looking for doesn&apos;t exist.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/generator">
-              <Button className="w-full">Create a New Quiz</Button>
+      <div className="min-h-screen bg-background">
+        <div className="site-shell flex min-h-screen items-center justify-center">
+          <div className="paper-panel max-w-md p-6 text-center">
+            <p className="section-label">Editor</p>
+            <h1 className="mt-3 text-3xl">Quiz not found</h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              This draft is no longer available on this browser.
+            </p>
+            <Link href="/generator" className="mt-6 inline-flex">
+              <Button>Create a new quiz</Button>
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border sticky top-0 bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-4">
-          <Link href="/generator">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
+      <header className="border-b border-border/80 bg-background/95 backdrop-blur">
+        <div className="site-shell flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-bold text-lg">Quiz Editor</h1>
-            <p className="text-xs text-muted-foreground">
-              {quiz.items.length} questions
+            <p className="text-2xl font-semibold tracking-tight">PahiraQuiz</p>
+            <p className="text-sm text-muted-foreground">
+              Gusto mo ba pahirapan (matuto) students mo?
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <AnswerKeyModal items={quiz.items} />
-          <ExportButton quiz={quiz} />
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="gap-2"
-          >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSaving ? 'Saving...' : <Save className="w-4 h-4" />}
-            Save
-          </Button>
-        </div>
-      </nav>
 
-      <div className="px-6 py-8 max-w-5xl mx-auto">
-        {/* Title Editor */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Quiz Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="quiz-title" className="text-sm font-semibold mb-2 block">
-                  Quiz Title
-                </Label>
-                <Input
-                  id="quiz-title"
-                  value={quizTitle}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="Enter quiz title"
-                  className="text-lg"
-                />
+          <Link href="/generator" className="inline-flex">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to generator
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      <main className="site-shell py-10">
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="space-y-6">
+            <section className="paper-panel p-6">
+              <p className="section-label">Quiz details</p>
+              <div className="mt-5 space-y-4">
+                <div>
+                  <Label htmlFor="quiz-title" className="mb-2 block text-sm font-semibold">
+                    Quiz title
+                  </Label>
+                  <Input
+                    id="quiz-title"
+                    value={quizTitle}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    placeholder="Enter quiz title"
+                  />
+                </div>
+
+                <div className="grid gap-3 text-sm">
+                  <div className="rounded-xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Total questions
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-primary">{quiz.items.length}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Formats used
+                    </p>
+                    <p className="mt-2 font-medium">{quiz.types.map((type) => TYPE_LABELS[type]).join(', ')}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Last updated
+                    </p>
+                    <p className="mt-2 font-medium">
+                      {new Date(quiz.updatedAt).toLocaleString([], {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div className="p-3 bg-secondary rounded-lg">
-                  <p className="text-xs text-muted-foreground">Total Questions</p>
-                  <p className="text-2xl font-bold text-primary">{quiz.items.length}</p>
-                </div>
-                <div className="p-3 bg-secondary rounded-lg">
-                  <p className="text-xs text-muted-foreground">Question Types</p>
-                  <p className="text-2xl font-bold text-primary">{quiz.types.length}</p>
-                </div>
-                <div className="p-3 bg-secondary rounded-lg">
-                  <p className="text-xs text-muted-foreground">Last Edited</p>
-                  <p className="text-xs font-semibold text-primary">
-                    {new Date(quiz.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
+            </section>
+
+            <section className="paper-panel p-6">
+              <p className="section-label">Actions</p>
+              <div className="mt-5 flex flex-col gap-3">
+                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {isSaving ? 'Saving...' : 'Save draft'}
+                </Button>
+                <AnswerKeyModal items={quiz.items} />
+                <ExportButton quiz={quiz} />
               </div>
+            </section>
+          </aside>
+
+          <section className="paper-panel p-6">
+            <div className="mb-5">
+              <p className="section-label">Editor</p>
+              <h1 className="mt-2 text-3xl">Review and clean up the quiz</h1>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Edit the questions below, then preview the printable version before exporting.
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Questions Tabs */}
-        <Tabs defaultValue="editor" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="editor">
-              Edit Questions ({quiz.items.length})
-            </TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
+            <Tabs defaultValue="editor" className="space-y-5">
+              <TabsList>
+                <TabsTrigger value="editor">Edit questions</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="editor" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Edit Questions</CardTitle>
-                <CardDescription>
-                  Click on any question to edit its content, answers, or delete it
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              <TabsContent value="editor" className="space-y-4">
                 <QuestionEditor
                   items={quiz.items}
                   onItemsChange={handleItemsChange}
                   onItemDelete={handleItemDelete}
                 />
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="preview" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Preview</CardTitle>
-                <CardDescription>
-                  How your quiz will appear to students
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-8">
-                  {quiz.items.map((item) => (
-                    <div key={item.id} className="border-b border-border pb-6 last:border-b-0">
-                      <h3 className="font-bold mb-3">
-                        {item.number}. {item.type === 'sir-dong-style' && 'Sir Dong Style'}
-                        {item.type === 'multiple-choice' && 'Multiple Choice'}
-                        {item.type === 'identification' && 'Identification'}
-                        {item.type === 'fill-in-blank' && 'Fill in the Blank'}
-                      </h3>
-
-                      {item.type === 'sir-dong-style' && (
-                        <div className="space-y-3 text-sm">
-                          <p><strong>Statement 1:</strong> {(item as any).statement1}</p>
-                          <p><strong>Statement 2:</strong> {(item as any).statement2}</p>
-                          <div className="mt-3 space-y-2">
-                            {(item as any).choices.map((choice: string, idx: number) => (
-                              <p key={idx}>
-                                {String.fromCharCode(65 + idx)}. {choice.replace(/^[A-D]:\s*/, '')}
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {item.type === 'multiple-choice' && (
-                        <div className="space-y-3 text-sm">
-                          <p><strong>Question:</strong> {(item as any).question}</p>
-                          <div className="mt-3 space-y-2">
-                            {(item as any).choices.map((choice: string, idx: number) => (
-                              <p key={idx}>
-                                {String.fromCharCode(65 + idx)}. {choice.replace(/^[A-D]:\s*/, '')}
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {item.type === 'identification' && (
-                        <div className="text-sm">
-                          <p>{(item as any).question}</p>
-                        </div>
-                      )}
-
-                      {item.type === 'fill-in-blank' && (
-                        <div className="text-sm">
-                          <p>{(item as any).sentence}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              <TabsContent value="preview" className="space-y-4">
+                {quiz.items.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-border bg-background p-5">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      {TYPE_LABELS[item.type]}
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold">Question {item.number}</h3>
+                    <div className="mt-4">{renderPreview(item)}</div>
+                  </div>
+                ))}
+              </TabsContent>
+            </Tabs>
+          </section>
+        </div>
+      </main>
     </div>
   )
 }

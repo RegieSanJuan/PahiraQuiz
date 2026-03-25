@@ -35,6 +35,15 @@ interface QuestionEditorProps {
   onItemDelete: (id: string) => void
 }
 
+function previewText(text: string): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return 'Untitled question'
+  }
+
+  return trimmed.length > 60 ? `${trimmed.slice(0, 60)}...` : trimmed
+}
+
 export function QuestionEditor({
   items,
   onItemsChange,
@@ -87,22 +96,22 @@ export function QuestionEditor({
                     <span className="font-semibold">{item.number}. </span>
                     {item.type === 'sir-dong-style' && (
                       <span className="text-muted-foreground">
-                        {(item as SirDongStyleItem).statement1.substring(0, 60)}...
+                        {previewText((item as SirDongStyleItem).statement1)}
                       </span>
                     )}
                     {item.type === 'multiple-choice' && (
                       <span className="text-muted-foreground">
-                        {(item as MultipleChoiceItem).question.substring(0, 60)}...
+                        {previewText((item as MultipleChoiceItem).question)}
                       </span>
                     )}
                     {item.type === 'identification' && (
                       <span className="text-muted-foreground">
-                        {(item as IdentificationItem).question.substring(0, 60)}...
+                        {previewText((item as IdentificationItem).question)}
                       </span>
                     )}
                     {item.type === 'fill-in-blank' && (
                       <span className="text-muted-foreground">
-                        {(item as FillInBlankItem).sentence.substring(0, 60)}...
+                        {previewText((item as FillInBlankItem).sentence)}
                       </span>
                     )}
                   </div>
@@ -235,6 +244,7 @@ function SirDongStyleEditor({
         ))}
       </div>
       <CorrectAnswerSelector
+        idPrefix={item.id}
         value={item.correctAnswer}
         onChange={(val) => onChange({ ...item, correctAnswer: val as 'A' | 'B' | 'C' | 'D' })}
       />
@@ -279,6 +289,7 @@ function MultipleChoiceEditor({
         ))}
       </div>
       <CorrectAnswerSelector
+        idPrefix={item.id}
         value={item.correctAnswer}
         onChange={(val) => onChange({ ...item, correctAnswer: val as 'A' | 'B' | 'C' | 'D' })}
       />
@@ -350,9 +361,11 @@ function FillInBlankEditor({
 }
 
 function CorrectAnswerSelector({
+  idPrefix,
   value,
   onChange,
 }: {
+  idPrefix: string
   value: 'A' | 'B' | 'C' | 'D'
   onChange: (val: string) => void
 }) {
@@ -366,7 +379,7 @@ function CorrectAnswerSelector({
               key={letter}
               className="flex items-center gap-2 p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary/50"
             >
-              <RadioGroupItem value={letter} id={`ans-${letter}`} />
+              <RadioGroupItem value={letter} id={`${idPrefix}-ans-${letter}`} />
               <span className="font-semibold">{letter}</span>
             </label>
           ))}

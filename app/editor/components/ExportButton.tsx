@@ -28,13 +28,14 @@ export function ExportButton({ quiz }: ExportButtonProps) {
 
   const handleExport = async () => {
     setIsGenerating(true)
+
     try {
       await generatePDF(quiz, includeAnswerKey)
-      toast.success('PDF exported successfully!')
+      toast.success('PDF exported successfully.')
       setIsOpen(false)
     } catch (error) {
       console.error('PDF export error:', error)
-      toast.error('Failed to generate PDF')
+      toast.error('Failed to generate PDF.')
     } finally {
       setIsGenerating(false)
     }
@@ -43,66 +44,48 @@ export function ExportButton({ quiz }: ExportButtonProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Download className="w-4 h-4" />
-          Export to PDF
+        <Button variant="outline" className="gap-2">
+          <Download className="h-4 w-4" />
+          Export PDF
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Export Quiz to PDF</DialogTitle>
-          <DialogDescription>
-            Choose your export options
-          </DialogDescription>
+          <DialogTitle>Export quiz to PDF</DialogTitle>
+          <DialogDescription>Choose whether to include the answer key.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <Checkbox
-                checked={includeAnswerKey}
-                onCheckedChange={(checked) =>
-                  setIncludeAnswerKey(!!checked)
-                }
-              />
-              <Label className="cursor-pointer">
-                Include answer key in PDF
-              </Label>
-            </label>
-            <p className="text-xs text-muted-foreground ml-6">
-              {includeAnswerKey
-                ? 'The PDF will include a separate answer key section'
-                : 'Only the quiz questions will be included'}
-            </p>
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-secondary/50 p-4">
+            <Checkbox
+              checked={includeAnswerKey}
+              onCheckedChange={(checked) => setIncludeAnswerKey(Boolean(checked))}
+            />
+            <div>
+              <Label className="cursor-pointer font-medium">Include answer key</Label>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {includeAnswerKey
+                  ? 'The file will include a separate answer key section.'
+                  : 'Only the quiz questions will be included.'}
+              </p>
+            </div>
+          </label>
+
+          <div className="rounded-xl border border-border bg-background p-4">
+            <p className="text-sm font-semibold">Export summary</p>
+            <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+              <p>Title: {quiz.title}</p>
+              <p>Total questions: {quiz.items.length}</p>
+              <p>Answer key: {includeAnswerKey ? 'Included' : 'Not included'}</p>
+            </div>
           </div>
 
-          <div className="p-4 bg-secondary rounded-lg">
-            <p className="text-sm font-semibold mb-2">Export Summary:</p>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• Title: {quiz.title}</li>
-              <li>• Total questions: {quiz.items.length}</li>
-              <li>
-                • Answer key: {includeAnswerKey ? 'Included' : 'Not included'}
-              </li>
-            </ul>
-          </div>
-
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isGenerating}
-            >
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isGenerating}>
               Cancel
             </Button>
-            <Button
-              onClick={handleExport}
-              disabled={isGenerating}
-              className="gap-2"
-            >
-              {isGenerating && (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              )}
+            <Button onClick={handleExport} disabled={isGenerating} className="gap-2">
+              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isGenerating ? 'Generating...' : 'Export PDF'}
             </Button>
           </div>

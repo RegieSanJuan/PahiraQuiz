@@ -23,7 +23,6 @@ interface AnswerKeyModalProps {
 }
 
 export function AnswerKeyModal({ items }: AnswerKeyModalProps) {
-  // Group items by type
   const itemsByType = new Map<string, AnyQuizItem[]>()
   items.forEach((item) => {
     if (!itemsByType.has(item.type)) {
@@ -43,51 +42,35 @@ export function AnswerKeyModal({ items }: AnswerKeyModalProps) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
-          <Scroll className="w-4 h-4" />
-          View Answer Key
+          <Scroll className="h-4 w-4" />
+          View answer key
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Answer Key</DialogTitle>
-          <DialogDescription>
-            Complete answer key for all questions
-          </DialogDescription>
+          <DialogTitle>Answer key</DialogTitle>
+          <DialogDescription>Review all answers before you print or export.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {Array.from(itemsByType.entries()).map(([type, typeItems]) => (
             <div key={type} className="space-y-3">
-              <h3 className="font-bold text-lg text-primary">
-                {typeLabels[type]}
-              </h3>
+              <h3 className="text-xl font-semibold">{typeLabels[type]}</h3>
 
-              <div className="space-y-2 border-l-4 border-primary/30 pl-4">
+              <div className="space-y-3">
                 {typeItems.map((item) => (
-                  <div key={item.id} className="pb-3 border-b border-border last:border-b-0">
-                    {item.type === 'sir-dong-style' || item.type === 'multiple-choice' ? (
-                      <div>
-                        <p className="text-sm font-semibold text-muted-foreground mb-1">
-                          Question {item.number}
-                        </p>
-                        <p className="text-base font-bold">
-                          Answer: <span className="text-primary">
-                            {(item as SirDongStyleItem | MultipleChoiceItem).correctAnswer}
-                          </span>
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm font-semibold text-muted-foreground mb-1">
-                          Question {item.number}
-                        </p>
-                        <p className="text-base font-bold">
-                          Answer: <span className="text-primary">
-                            {(item as IdentificationItem | FillInBlankItem).correctAnswer}
-                          </span>
-                        </p>
-                      </div>
-                    )}
+                  <div key={item.id} className="rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Question {item.number}
+                    </p>
+                    <p className="mt-2 text-sm font-medium">
+                      Answer:{' '}
+                      <span className="text-primary">
+                        {item.type === 'sir-dong-style' || item.type === 'multiple-choice'
+                          ? (item as SirDongStyleItem | MultipleChoiceItem).correctAnswer
+                          : (item as IdentificationItem | FillInBlankItem).correctAnswer}
+                      </span>
+                    </p>
                   </div>
                 ))}
               </div>

@@ -3,11 +3,13 @@
 export async function extractTextFromFile(file: File): Promise<string> {
   if (file.type === 'text/plain') {
     return extractFromText(file)
-  } else if (file.type === 'application/pdf') {
-    return extractFromPDF(file)
-  } else {
-    throw new Error('Unsupported file type. Please use PDF or TXT files.')
   }
+
+  if (file.type === 'application/pdf') {
+    return extractFromPDF(file)
+  }
+
+  throw new Error('Unsupported file type. Please use PDF or TXT files.')
 }
 
 async function extractFromText(file: File): Promise<string> {
@@ -24,21 +26,26 @@ async function extractFromText(file: File): Promise<string> {
 
 async function extractFromPDF(file: File): Promise<string> {
   try {
-    // Dynamic import of pdfjs-dist
-    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf')
-    
-    // Set worker source
-    const pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.entry')
-    
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/legacy/build/pdf.worker.mjs',
+        import.meta.url
+      ).toString()
+    }
+
     const arrayBuffer = await file.arrayBuffer()
-    const pdf = await getDocument({ data: arrayBuffer }).promise
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
 
     let fullText = ''
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum)
       const textContent = await page.getTextContent()
-      const pageText = textContent.items.map((item: any) => item.str).join(' ')
+      const pageText = textContent.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ')
       fullText += pageText + '\n'
     }
 

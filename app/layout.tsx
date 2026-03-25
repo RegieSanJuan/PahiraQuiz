@@ -1,15 +1,27 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Public_Sans, Source_Serif_4 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const publicSans = Public_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-public-sans',
+})
+
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-source-serif',
+})
 
 export const metadata: Metadata = {
-  title: 'PahiraQuiz - AI-Powered Quiz Generator',
-  description: 'Create customizable quizzes from your lesson materials in minutes using AI',
-  generator: 'v0.app',
+  title: {
+    default: 'PahiraQuiz',
+    template: '%s | PahiraQuiz',
+  },
+  description:
+    'Gusto mo ba pahirapan (matuto) students mo? Build clear classroom quizzes from lesson notes with PahiraQuiz.',
   icons: {
     icon: [
       {
@@ -36,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className={`${publicSans.variable} ${sourceSerif.variable} antialiased`}>
         {children}
         <Analytics />
       </body>

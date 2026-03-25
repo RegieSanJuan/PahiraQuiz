@@ -5,21 +5,28 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ApiKeyInput } from './components/ApiKeyInput'
 import { LessonInput } from './components/LessonInput'
 import { QuizTypeSelector } from './components/QuizTypeSelector'
 import { ItemDistribution } from './components/ItemDistribution'
-import { Quiz, QuizType } from '@/lib/types'
+import { QuizType } from '@/lib/types'
 import { generateQuiz } from '@/lib/gemini'
 import { saveDraft } from '@/lib/localStorage'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
+const MIN_CONTENT_LENGTH = 120
+const MAX_TOTAL_QUESTIONS = 100
+const QUIZ_TYPE_ORDER: QuizType[] = [
+  'sir-dong-style',
+  'multiple-choice',
+  'identification',
+  'fill-in-blank',
+]
+
 export default function GeneratorPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
   const [apiKey, setApiKey] = useState('')
   const [apiKeyValid, setApiKeyValid] = useState(false)
   const [quizTitle, setQuizTitle] = useState('My Quiz')
@@ -34,34 +41,48 @@ export default function GeneratorPage() {
   })
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const totalQuestions = Object.values(distribution).reduce((a, b) => a + b, 0)
+  const totalQuestions = selectedTypes.reduce((sum, type) => sum + (distribution[type] || 0), 0)
+  const lessonIsReady = lessonContent.trim().length >= MIN_CONTENT_LENGTH
+  const quizTitleIsReady = quizTitle.trim().length > 0
+  const canGenerate =
+    apiKeyValid &&
+    lessonIsReady &&
+    selectedTypes.length > 0 &&
+    totalQuestions > 0 &&
+    totalQuestions <= MAX_TOTAL_QUESTIONS &&
+    quizTitleIsReady
 
-  const canProceed = {
-    1: apiKeyValid,
-    2: lessonContent.length >= 50,
-    3: selectedTypes.length > 0,
-    4: totalQuestions > 0 && totalQuestions <= 100,
+  const checklist = {
+    'Gemini key validated': apiKeyValid,
+    'Lesson content added': lessonIsReady,
+    'Quiz types selected': selectedTypes.length > 0,
+    'Question count ready': totalQuestions > 0 && totalQuestions <= MAX_TOTAL_QUESTIONS,
+    'Title filled in': quizTitleIsReady,
   }
 
-  const handleNext = () => {
-    if (canProceed[step as keyof typeof canProceed]) {
-      setStep(step + 1)
-    }
-  }
+  const handleTypeChange = (types: QuizType[]) => {
+    setSelectedTypes(types)
+    setDistribution((currentDistribution) => {
+      const nextDistribution = { ...currentDistribution }
 
-  const handlePrevious = () => {
-    if (step > 1) {
-      setStep(step - 1)
-    }
+      QUIZ_TYPE_ORDER.forEach((type) => {
+        if (!types.includes(type)) {
+          nextDistribution[type] = 0
+        }
+      })
+
+      return nextDistribution
+    })
   }
 
   const handleGenerate = async () => {
-    if (!quizTitle.trim()) {
-      toast.error('Please enter a quiz title')
+    if (!canGenerate) {
+      toast.error('Please complete each section before generating.')
       return
     }
 
     setIsGenerating(true)
+
     try {
       const quiz = await generateQuiz({
         apiKey,
@@ -71,19 +92,12 @@ export default function GeneratorPage() {
         distribution,
       })
 
-      // Save draft
       saveDraft(quiz)
-
-      // Redirect to editor
       router.push(`/editor?id=${quiz.id}`)
       toast.success('Quiz generated successfully!')
     } catch (error) {
       console.error('Quiz generation error:', error)
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to generate quiz. Please try again.'
-      )
+      toast.error(error instanceof Error ? error.message : 'Failed to generate quiz. Please try again.')
     } finally {
       setIsGenerating(false)
     }
@@ -91,200 +105,159 @@ export default function GeneratorPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-70 transition-opacity">
-            <span className="font-bold">PahiraQuiz</span>
+      <header className="border-b border-border/80 bg-background/95 backdrop-blur">
+        <div className="site-shell flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-2xl font-semibold tracking-tight">PahiraQuiz</p>
+            <p className="text-sm text-muted-foreground">
+              Gusto mo ba pahirapan (matuto) students mo?
+            </p>
+          </div>
+
+          <Link href="/" className="inline-flex">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back home
+            </Button>
           </Link>
-          <span className="text-muted-foreground">/ Generator</span>
         </div>
-        <span className="text-sm text-muted-foreground">Step {step} of 5</span>
-      </nav>
+      </header>
 
-      <div className="px-6 py-12 max-w-2xl mx-auto">
-        {/* Progress Indicator */}
-        <div className="mb-12">
-          <div className="flex justify-between mb-4">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <div
-                key={s}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-colors ${
-                  s < step
-                    ? 'bg-primary text-primary-foreground'
-                    : s === step
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                {s}
+      <main className="site-shell py-10">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6">
+            <section className="paper-panel p-6 sm:p-8">
+              <p className="section-label">Generator</p>
+              <h1 className="mt-3 text-4xl sm:text-5xl">Build one quiz at a time.</h1>
+              <p className="muted-copy mt-4 max-w-3xl">
+                Everything stays on one page so you can see the key, source material, question
+                types, counts, and title before you run Gemini.
+              </p>
+            </section>
+
+            <section className="paper-panel p-6">
+              <div className="mb-5">
+                <p className="section-label">Step 1</p>
+                <h2 className="mt-2 text-3xl">Validate your Gemini key</h2>
               </div>
-            ))}
-          </div>
-          <div className="h-1 bg-secondary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${(step / 5) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Content Card */}
-        <Card className="mb-8">
-          <CardHeader>
-            {step === 1 && (
-              <>
-                <CardTitle>Configure API Key</CardTitle>
-                <CardDescription>
-                  Set up your Google Gemini API key to start generating quizzes
-                </CardDescription>
-              </>
-            )}
-            {step === 2 && (
-              <>
-                <CardTitle>Upload Lesson Content</CardTitle>
-                <CardDescription>
-                  Provide the lesson material that your quiz will be based on
-                </CardDescription>
-              </>
-            )}
-            {step === 3 && (
-              <>
-                <CardTitle>Select Quiz Types</CardTitle>
-                <CardDescription>
-                  Choose which types of questions to include in your quiz
-                </CardDescription>
-              </>
-            )}
-            {step === 4 && (
-              <>
-                <CardTitle>Set Question Distribution</CardTitle>
-                <CardDescription>
-                  Specify how many questions of each type you want
-                </CardDescription>
-              </>
-            )}
-            {step === 5 && (
-              <>
-                <CardTitle>Review & Generate</CardTitle>
-                <CardDescription>
-                  Finalize your settings and generate the quiz
-                </CardDescription>
-              </>
-            )}
-          </CardHeader>
-
-          <CardContent className="space-y-8">
-            {step === 1 && (
               <ApiKeyInput
                 value={apiKey}
                 onChange={setApiKey}
                 onValidationChange={setApiKeyValid}
               />
-            )}
+            </section>
 
-            {step === 2 && (
+            <section className="paper-panel p-6">
+              <div className="mb-5">
+                <p className="section-label">Step 2</p>
+                <h2 className="mt-2 text-3xl">Add lesson content</h2>
+              </div>
               <LessonInput
                 value={lessonContent}
                 onChange={setLessonContent}
                 fileName={fileName}
                 onFileNameChange={setFileName}
               />
-            )}
+            </section>
 
-            {step === 3 && (
-              <QuizTypeSelector
-                selectedTypes={selectedTypes}
-                onChange={setSelectedTypes}
-              />
-            )}
+            <section className="paper-panel p-6">
+              <div className="mb-5">
+                <p className="section-label">Step 3</p>
+                <h2 className="mt-2 text-3xl">Choose quiz formats</h2>
+              </div>
+              <QuizTypeSelector selectedTypes={selectedTypes} onChange={handleTypeChange} />
+            </section>
 
-            {step === 4 && (
-              <ItemDistribution
-                selectedTypes={selectedTypes}
-                distribution={distribution}
-                onChange={setDistribution}
-              />
-            )}
+            {selectedTypes.length > 0 ? (
+              <section className="paper-panel p-6">
+                <div className="mb-5">
+                  <p className="section-label">Step 4</p>
+                  <h2 className="mt-2 text-3xl">Set item counts</h2>
+                </div>
+                <ItemDistribution
+                  selectedTypes={selectedTypes}
+                  distribution={distribution}
+                  onChange={setDistribution}
+                />
+              </section>
+            ) : null}
 
-            {step === 5 && (
-              <div className="space-y-6">
-                <div className="p-4 bg-card border border-border rounded-lg">
-                  <Label className="text-sm font-semibold mb-4 block">
-                    Quiz Title
+            <section className="paper-panel p-6">
+              <div className="mb-5">
+                <p className="section-label">Step 5</p>
+                <h2 className="mt-2 text-3xl">Name your quiz</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="quiz-title" className="mb-2 block text-sm font-semibold">
+                    Quiz title
                   </Label>
                   <Input
+                    id="quiz-title"
                     value={quizTitle}
                     onChange={(e) => setQuizTitle(e.target.value)}
-                    placeholder="Enter quiz title"
+                    placeholder="Example: Chapter 4 Review Quiz"
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Quiz Summary</h3>
-                  <div className="grid gap-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Types selected:</span>
-                      <span className="font-medium">{selectedTypes.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total questions:</span>
-                      <span className="font-medium">{totalQuestions}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Content length:</span>
-                      <span className="font-medium">
-                        {Math.round(lessonContent.length / 100)} × 100 chars
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                  <p className="text-sm text-accent">
-                    Your quiz will be generated using the Gemini API. This may take a moment depending on the size.
-                  </p>
+                <div className="rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
+                  The generated draft opens in the editor right away, where you can revise
+                  questions, answers, and export settings.
                 </div>
               </div>
-            )}
+            </section>
+          </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex gap-3 pt-6">
+          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            <div className="paper-panel p-6">
+              <p className="section-label">Readiness check</p>
+              <div className="mt-5 space-y-3">
+                {Object.entries(checklist).map(([label, ready]) => (
+                  <div key={label} className="flex items-start gap-3 text-sm">
+                    <CheckCircle2
+                      className={`mt-0.5 h-4 w-4 ${ready ? 'text-emerald-600' : 'text-muted-foreground/50'}`}
+                    />
+                    <span className={ready ? 'text-foreground' : 'text-muted-foreground'}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="paper-panel p-6">
+              <p className="section-label">Summary</p>
+              <div className="mt-5 grid gap-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Lesson length</span>
+                  <span className="font-medium">{lessonContent.trim().length.toLocaleString()} chars</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Formats selected</span>
+                  <span className="font-medium">{selectedTypes.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total questions</span>
+                  <span className="font-medium">{totalQuestions}</span>
+                </div>
+              </div>
+
               <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={step === 1}
-                className="gap-2"
+                onClick={handleGenerate}
+                disabled={isGenerating || !canGenerate}
+                className="mt-6 w-full gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Previous
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {isGenerating ? 'Generating quiz...' : 'Generate quiz'}
               </Button>
 
-              {step < 5 ? (
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed[step as keyof typeof canProceed]}
-                  className="ml-auto gap-2"
-                >
-                  Next
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !quizTitle.trim()}
-                  className="ml-auto gap-2"
-                >
-                  {isGenerating && (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  )}
-                  {isGenerating ? 'Generating...' : 'Generate Quiz'}
-                </Button>
-              )}
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Minimum lesson length: {MIN_CONTENT_LENGTH} characters. Maximum total questions:{' '}
+                {MAX_TOTAL_QUESTIONS}.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </aside>
+        </div>
+      </main>
     </div>
   )
 }
