@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { SiteBrand } from '@/components/site-brand'
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -31,12 +32,7 @@ export default function HomePage() {
     <div className="min-h-screen text-foreground">
       <header className="border-b border-border/80 bg-background/95 backdrop-blur">
         <div className="site-shell flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-2xl font-semibold tracking-tight">PahiraQuiz</p>
-            <p className="text-sm text-muted-foreground">
-              Gusto mo ba pahirapan (matuto) students mo?
-            </p>
-          </div>
+          <SiteBrand size="compact" />
 
           <Link href="/generator">
             <Button className="gap-2">

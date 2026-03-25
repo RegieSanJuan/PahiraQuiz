@@ -9,6 +9,7 @@ import { ApiKeyInput } from './components/ApiKeyInput'
 import { LessonInput } from './components/LessonInput'
 import { QuizTypeSelector } from './components/QuizTypeSelector'
 import { ItemDistribution } from './components/ItemDistribution'
+import { SiteBrand } from '@/components/site-brand'
 import { QuizType } from '@/lib/types'
 import { generateQuiz } from '@/lib/gemini'
 import { saveDraft } from '@/lib/localStorage'
@@ -107,12 +108,7 @@ export default function GeneratorPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/80 bg-background/95 backdrop-blur">
         <div className="site-shell flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-2xl font-semibold tracking-tight">PahiraQuiz</p>
-            <p className="text-sm text-muted-foreground">
-              Gusto mo ba pahirapan (matuto) students mo?
-            </p>
-          </div>
+          <SiteBrand size="compact" />
 
           <Link href="/" className="inline-flex">
             <Button variant="outline" className="gap-2">
